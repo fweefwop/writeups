@@ -1,6 +1,6 @@
 # CTF Writesups
 
-## cty: Binary Exploitation with Canary
+## ct-y: Binary Exploitation with Canary
 ### inlcuded files: 
 cty.md (**writeup for this problem**)
 cty.c   
