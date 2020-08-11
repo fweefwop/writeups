@@ -70,7 +70,7 @@ As soon as we see the c code, we see a format string in **printf()**, and an ove
 We do a python code to see possible outputs of **format strings**      
 **%dlx** is used to print out address value
 
-(This article explains well about what is <a href="https://www.win.tue.nl/~aeb/linux/hh/hh-5.html#ss5.4">format strings attack</a> )
+(This article explains well about what is <a href="https://www.win.tue.nl/~aeb/linux/hh/hh-5.html#ss5.5">format strings attack</a> )
 ```
 #!/usr/bin/env python3
 from pwn import *
