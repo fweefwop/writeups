@@ -45,8 +45,8 @@ We used ```bytes_to_long(received[-2: :-1])``` to process the address and put it
 Then use this leaked to construct second rop!
 
 ## Construct second rop
-We can get libc base address through ``` leaked - libc.sym["__libc_start_main"] ``` and assign it to ```libc.address```. 
-```libc = ELF("libc-2.27.so") which is given. This libc is machine dependent. You can find out which libc you are using by ```ldd rop```, and set libc accordingly. 
+We can get libc base address through ``` leaked - libc.sym["__libc_start_main"] ``` and assign it to ```libc.address```.    
+```libc = ELF("libc-2.27.so")``` which is given. This libc is machine dependent. You can find out which libc you are using by ```ldd rop```, and set libc accordingly. 
 
 The second rop is like this:
 ```
