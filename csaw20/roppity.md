@@ -31,6 +31,23 @@ main = elf.symbols["main"]
 
 ```
 
+## Create 1st rop 
+The first rop is used to leak libc base address.
+
+```
+rop = base + p64(poprdi) + p64(_libc_start_main_ptr) + p64(puts) + p64(main)
+
+```
+
+After sending in the rop through ``` p.sendline(rop)```, we will receive an address back. This is the leaked ```main``` address.
+
+We used ```bytes_to_long(received[-2: :-1])``` to process the address and put it into ```leaked```.
+Then use this leaked to construct second rop!
+
+## Construct second rop
+
+
+
 ## Original Script
 
 ```
